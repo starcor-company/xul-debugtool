@@ -128,7 +128,8 @@ class MainWindow(BaseWindow):
 
         middleContainer.stackedWidget = QStackedWidget()
         browser = QWebEngineView()
-        browser.load(QUrl('https://github.com/starcor-company/XulDebugTool'))
+        # browser.load(QUrl('https://github.com/starcor-company/XulDebugTool'))
+        browser.load(QUrl('http://172.31.11.144:55555/api/get-layout/13942548'))
         middleContainer.stackedWidget.addWidget(browser)
         middleContainer.stackedWidget.addWidget(QLabel('tab2 content'))
 
