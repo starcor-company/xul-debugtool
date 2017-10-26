@@ -23,7 +23,7 @@ class BaseWindow(QMainWindow):
     def initWindow(self):
         self.setWindowTitle(self.title)
         self.setWindowIcon(IconTool.buildQIcon('icon.png'))
-        self.center()
+        self.center()zzxc
 
     # 设置窗口居中
     def center(self):
