@@ -13,6 +13,7 @@ last edited: 2017.10.14
 import sys
 from PyQt5.QtWidgets import QApplication
 from XulDebugTool.ui.ConnectWindow import ConnectWindow
+from XulDebugTool.ui.HomeWindow import HomeWindow
 
 
 class App(object):
@@ -21,5 +22,5 @@ class App(object):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    ex = ConnectWindow()
+    ex = HomeWindow()
     sys.exit(app.exec_())
