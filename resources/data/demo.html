@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<style type="text/css">
+    * li {
+        list-style: none;
+    }
+
+    #child {
+        overflow: hidden;
+    }
+
+    #child li {
+        float: left;
+        padding-right: 15px;
+    }
+
+    #dot {
+        display: none;
+    }
+</style>
+
+<body>
+    <ul id="parent-ui">
+        <li>
+            <span id="head">&lt;pages&gt;</span>
+            <ul id="child">
+                <li>
+                    &lt;page
+                </li>
+                <li>
+                    id =
+                    <a href="http://www.baidu.com">"166867372"</a>
+                </li>
+                <li>
+                    pageId = "page_simple_main"
+                </li>
+                <li>
+                    layoutFile = "file:///.assets/plugin/simplemain/xul_simple_main_page.xml"
+                </li>
+                <li>
+                    behavior = "com.starcor.plugin.simplemain.SimpleMainPage"
+                </li>
+                <li>
+                    pageClass = "CommonActivity"
+                </li>
+                <li>
+                    taskId = "474"
+                </li>
+                <li>
+                    intentFlags = "RECEIVER_FOREGROUND"
+                </li>
+                <li>
+                    status = "resumed"
+                </li>
+
+                <li>
+                    readyTime = "187"
+                </li>
+
+                <li>
+                    drawing = "frames:27, avg:4.30, min:1.53, max:5.59"
+                </li>
+                <li>
+                    /&gt;
+                </li>
+            </ul>
+        </li>
+        <li>
+            <span id='dot'>...</span>&lt;/pages&gt;</li>
+    </ul>
+
+    <script>
+        var head = document.getElementById('head');
+        var child = document.getElementById('child');
+        var parent_ui = document.querySelector('#parent-ui li');
+        var dot = document.getElementById('dot');
+        head.onclick = function () {
+            if (child.style.display != 'none') {
+                child.style.display = 'none';
+                parent_ui.style.float = 'left';
+                dot.style.display = 'inline-block';
+            } else {
+                child.style.display = 'inline-block';
+                parent_ui.style.float = 'none';
+                dot.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+
+</html>
