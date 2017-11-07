@@ -16,7 +16,6 @@ class WebShareObject(QWidget):
         super(WebShareObject, self).__init__()
 
     def _getStrValue(self):
-        print('页面获取参数')
         return '100'
 
     def _setStrValue(self, str):
