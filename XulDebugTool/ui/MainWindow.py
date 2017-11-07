@@ -9,7 +9,10 @@ XulDebugTool
 author: Kenshin
 last edited: 2017.10.23
 """
+import os
+from PyQt5.QtWebChannel import QWebChannel
 
+from XulDebugTool.model.WebShareObject import WebShareObject
 from XulDebugTool.ui.BaseWindow import BaseWindow
 from XulDebugTool.ui.widget.PropertyEditor import PropertyEditor
 from XulDebugTool.ui.widget.SearchBarQLineEdit import SearchBarQLineEdit
@@ -19,7 +22,7 @@ from XulDebugTool.utils.XulDebugServerHelper import XulDebugServerHelper
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
-from PyQt5.QtWebEngineWidgets import QWebEngineView
+from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineScript
 
 import pyperclip
 
@@ -150,6 +153,14 @@ class MainWindow(BaseWindow):
 
         middleContainer.stackedWidget = QStackedWidget()
         self.browser = QWebEngineView()
+        channel = QWebChannel()
+        webObject = WebShareObject()
+        channel.registerObject('bridge', webObject)
+        self.browser.page().setWebChannel(channel)
+        Utils.scriptCreator(os.path.join('..', 'resources', 'js', 'qwebchannel.js'), 'qwebchannel',
+                            self.browser.page())
+        Utils.scriptCreator(os.path.join('..', 'resources', 'js', 'event.js'), 'click',
+                            self.browser.page())
         self.showXulDebugData(XulDebugServerHelper.HOST + 'list-pages')
         middleContainer.stackedWidget.addWidget(self.browser)
         middleContainer.stackedWidget.addWidget(QLabel('tab2 content'))
@@ -281,7 +292,8 @@ class MainWindow(BaseWindow):
                 # 没有只有一个userObject的情况, 暂不处理
                 pass
         if self.userobjectItem.rowCount() > 0:
-            self.userobjectItem.setText('%s(%s)' % (ROOT_ITEM_USER_OBJECT, self.userobjectItem.rowCount()))
+            self.userobjectItem.setText(
+                '%s(%s)' % (ROOT_ITEM_USER_OBJECT, self.userobjectItem.rowCount()))
 
     def showXulDebugData(self, url):
         self.browser.load(QUrl(url))
