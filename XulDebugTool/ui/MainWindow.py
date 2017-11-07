@@ -157,10 +157,26 @@ class MainWindow(BaseWindow):
         webObject = WebShareObject()
         channel.registerObject('bridge', webObject)
         self.browser.page().setWebChannel(channel)
-        Utils.scriptCreator(os.path.join('..', 'resources', 'js', 'qwebchannel.js'), 'qwebchannel',
-                            self.browser.page())
-        Utils.scriptCreator(os.path.join('..', 'resources', 'js', 'event.js'), 'click',
-                            self.browser.page())
+
+        qwebchannel_js = QFile(':/qtwebchannel/qwebchannel.js')
+        if not qwebchannel_js.open(QIODevice.ReadOnly):
+            raise SystemExit(
+                'Failed to load qwebchannel.js with error: %s' %
+                qwebchannel_js.errorString())
+        qwebchannel_js = bytes(qwebchannel_js.readAll()).decode('utf-8')
+
+        script = QWebEngineScript()
+        script.setSourceCode(qwebchannel_js)
+        script.setInjectionPoint(QWebEngineScript.DocumentCreation)
+        script.setName('qtwebchannel.js')
+        script.setWorldId(QWebEngineScript.MainWorld)
+        self.browser.page().scripts().insert(script)
+        self.browser.page().setWebChannel(channel)
+
+        # Utils.scriptCreator(os.path.join('..', 'resources', 'js', 'qwebchannel.js'), 'qwebchannel',
+        #                     self.browser.page())
+        # Utils.scriptCreator(os.path.join('..', 'resources', 'js', 'event.js'), 'click',
+        #                     self.browser.page())
         self.showXulDebugData(XulDebugServerHelper.HOST + 'list-pages')
         middleContainer.stackedWidget.addWidget(self.browser)
         middleContainer.stackedWidget.addWidget(QLabel('tab2 content'))
