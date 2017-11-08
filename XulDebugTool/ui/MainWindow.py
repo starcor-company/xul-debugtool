@@ -165,19 +165,58 @@ class MainWindow(BaseWindow):
                 qwebchannel_js.errorString())
         qwebchannel_js = bytes(qwebchannel_js.readAll()).decode('utf-8')
 
+        # f = open(os.path.join('..', 'resources', 'js', 'event.js'), 'r').read()
+        # str = qwebchannel_js + f
         script = QWebEngineScript()
-        script.setSourceCode(qwebchannel_js)
+        script.setSourceCode(qwebchannel_js + '''new QWebChannel( qt.webChannelTransport, function(channel) {
+	            window.bridge = channel.objects.bridge;
+	            alert('bridge='+bridge+'get bridge value=' + window.bridge.strValue ) ;
+	        });''')
         script.setInjectionPoint(QWebEngineScript.DocumentCreation)
         script.setName('qtwebchannel.js')
         script.setWorldId(QWebEngineScript.MainWorld)
+        script.setRunsOnSubFrames(True)
         self.browser.page().scripts().insert(script)
-        self.browser.page().setWebChannel(channel)
-
+        self.browser.load(QUrl.fromLocalFile(os.path.join('..', 'resources', 'html', 'index.html')))
         # Utils.scriptCreator(os.path.join('..', 'resources', 'js', 'qwebchannel.js'), 'qwebchannel',
         #                     self.browser.page())
         # Utils.scriptCreator(os.path.join('..', 'resources', 'js', 'event.js'), 'click',
         #                     self.browser.page())
-        self.showXulDebugData(XulDebugServerHelper.HOST + 'list-pages')
+        self.browser.page().setWebChannel(channel)
+        self.browser.setHtml(''' <html>
+    <head>
+      <title>A Demo Page</title>
+      <meta charset="UTF-8">
+      <script language="javascript">
+        
+	      function onShowMsgBox() {
+	        
+	        if ( window.bridge) {
+	        	//alert('bridge.strValue=' + window.bridge.strValue ) ;
+	            //bridge.sayHello('999')
+	            var fname = document.getElementById('fname').value;
+	            window.bridge.strValue = fname;
+	            
+	            
+	        }
+        	
+        }
+	          
+      
+      </script>     
+    </head>
+
+    <body>
+      <form>
+        <label for="姓名">user name:</label>
+        <input type="text" name="fname" id="fname"></input>
+        <br />
+        <input type="button" value="传递参数到pyqt" onclick="onShowMsgBox()">
+        <input type="reset" value='重置'/>
+      </form>
+    </body>
+  </html>''')
+        # self.showXulDebugData(XulDebugServerHelper.HOST + 'list-pages')
         middleContainer.stackedWidget.addWidget(self.browser)
         middleContainer.stackedWidget.addWidget(QLabel('tab2 content'))
 
