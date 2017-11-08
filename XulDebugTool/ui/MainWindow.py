@@ -10,35 +10,44 @@ author: Kenshin
 last edited: 2017.10.23
 """
 
-import pyperclip
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWebEngineWidgets import QWebEngineView
-from PyQt5.QtWidgets import *
-
 from XulDebugTool.ui.BaseWindow import BaseWindow
-from XulDebugTool.ui.widget.ConsoleView import ConsoleWindow
+from XulDebugTool.ui.widget.BaseDialog import BaseDialog
 from XulDebugTool.ui.widget.PropertyEditor import PropertyEditor
 from XulDebugTool.ui.widget.SearchBarQLineEdit import SearchBarQLineEdit
 from XulDebugTool.utils.IconTool import IconTool
 from XulDebugTool.utils.Utils import Utils
 from XulDebugTool.utils.XulDebugServerHelper import XulDebugServerHelper
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWebEngineWidgets import QWebEngineView
+
+import pyperclip
 
 ROOT_ITEM_PAGE = 'Page'
 ROOT_ITEM_USER_OBJECT = 'User-Object'
 ROOT_ITEM_PLUGIN = 'Plugin'
 CHILD_ITEM_DATA_SERVICE = 'DataService'
 
+# Model树第一层的节点类型
+ITEM_TYPE_PAGE_ROOT = 'pageRoot'
+ITEM_TYPE_USER_OBJECT_ROOT = 'userObjectRoot'
+ITEM_TYPE_PLUGIN_ROOT = 'pluginRoot'
+
+# Model树第二层的节点类型
+ITEM_TYPE_PAGE = 'page'
+ITEM_TYPE_USER_OBJECT = 'userObject'
+
+# Model树第二层的节点类型
+ITEM_TYPE_PROVIDER = 'provider'
+
 
 class MainWindow(BaseWindow):
     def __init__(self):
         super().__init__()
-        self.initConsole()
+        self.qObject = QObject()
         self.initUI()
         self.show()
-
-    def initConsole(self):
-        self.consoleView = ConsoleWindow()
 
     def initUI(self):
         self.resize(1400, 800)
@@ -71,10 +80,13 @@ class MainWindow(BaseWindow):
         # ----------------------------left layout---------------------------- #
         self.treeModel = QStandardItemModel()
         self.pageItem = QStandardItem(ROOT_ITEM_PAGE)
+        self.pageItem.type = ITEM_TYPE_PAGE_ROOT
         self.buildPageItem()
         self.userobjectItem = QStandardItem(ROOT_ITEM_USER_OBJECT)
+        self.userobjectItem.type = ITEM_TYPE_USER_OBJECT_ROOT
         self.buildUserObjectItem()
         self.pluginItem = QStandardItem(ROOT_ITEM_PLUGIN)
+        self.pluginItem.type = ITEM_TYPE_PLUGIN_ROOT
         self.treeModel.appendColumn([self.pageItem, self.userobjectItem, self.pluginItem])
         self.treeModel.setHeaderData(0, Qt.Horizontal, 'Model')
 
@@ -156,14 +168,6 @@ class MainWindow(BaseWindow):
         # ----------------------------right layout---------------------------- #
 
         self.propertyEditor = PropertyEditor(['Key', 'Value'])
-        def buildProperty():
-            qObject = QObject()
-            qObject.name = 'xxx'
-            qObject.width = 20
-            qObject.height = 20
-            return qObject
-        self.properties = buildProperty()
-        self.propertyEditor.addProperty(self.properties)
 
         rightContainer = QWidget()
         layout = QVBoxLayout()
@@ -173,23 +177,16 @@ class MainWindow(BaseWindow):
 
         # ----------------------------entire layout---------------------------- #
 
-        self.contentSplitter = QSplitter(Qt.Horizontal)
-        self.contentSplitter.setHandleWidth(0)  # thing to grab the splitter
+        self.mainSplitter = QSplitter(Qt.Horizontal)
+        self.mainSplitter.setHandleWidth(0)  # thing to grab the splitter
 
-        self.contentSplitter.addWidget(leftContainer)
-        self.contentSplitter.addWidget(middleContainer)
-        self.contentSplitter.addWidget(rightContainer)
-        self.contentSplitter.setStretchFactor(0, 0)
-        self.contentSplitter.setStretchFactor(1, 6)
-        self.contentSplitter.setStretchFactor(2, 6)
+        self.mainSplitter.addWidget(leftContainer)
+        self.mainSplitter.addWidget(middleContainer)
+        self.mainSplitter.addWidget(rightContainer)
+        self.mainSplitter.setStretchFactor(0, 0)
+        self.mainSplitter.setStretchFactor(1, 6)
+        self.mainSplitter.setStretchFactor(2, 6)
 
-        self.mainSplitter = QSplitter(Qt.Vertical)
-        self.mainSplitter.setHandleWidth(0)
-
-        self.mainSplitter.addWidget(self.contentSplitter)
-        self.mainSplitter.addWidget(self.consoleView)
-        self.mainSplitter.setStretchFactor(1, 0)
-        self.mainSplitter.setStretchFactor(2,1)
         self.setCentralWidget(self.mainSplitter)
 
     @pyqtSlot(QPoint)
@@ -197,32 +194,41 @@ class MainWindow(BaseWindow):
         index = self.treeView.indexAt(point)
         if not index.isValid():
             return
+        item = self.treeModel.itemFromIndex(index)
         menu = QMenu()
-        copyAction = QAction(IconTool.buildQIcon('copy.png'), 'Copy to Clipboard', self,
+        copyAction = QAction(IconTool.buildQIcon('copy.png'), 'Copy', self,
                              triggered=lambda: pyperclip.copy('%s' % index.data()))
+        copyAction.setShortcut('Ctrl+C')
+
         menu.addAction(copyAction)
+        if item.type == ITEM_TYPE_PROVIDER:
+            queryAction = QAction(IconTool.buildQIcon('data.png'), 'Query Data...', self,
+                                  triggered=lambda: self.showQueryDialog(item.data))
+            queryAction.setShortcut('Alt+Q')
+            menu.addAction(queryAction)
         menu.exec_(self.treeView.viewport().mapToGlobal(point))
 
     @pyqtSlot(QModelIndex)
     def getDebugData(self, index):
-        # item = index.internalPointer()
-        itemText = index.data()
-        parentText = index.parent().data()
+        item = self.treeModel.itemFromIndex(index)
 
-        if itemText == ROOT_ITEM_PAGE:  # page节点
+        if item.type == ITEM_TYPE_PAGE_ROOT:  # 树第一层,page节点
             self.buildPageItem()
             self.showXulDebugData(XulDebugServerHelper.HOST + 'list-pages')
-        elif itemText == ROOT_ITEM_USER_OBJECT:  # userobject节点
+        elif item.type == ITEM_TYPE_USER_OBJECT_ROOT:  # 树第一层,userObject节点
             self.buildUserObjectItem()
             self.showXulDebugData(XulDebugServerHelper.HOST + 'list-user-objects')
-        elif itemText == ROOT_ITEM_PLUGIN:  # plugin节点
+        elif item.type == ITEM_TYPE_PLUGIN_ROOT:  # 树第一层,plugin节点
             pass
-        elif parentText == ROOT_ITEM_PAGE:  # page下的子节点
-            pageId = itemText[itemText.find('(') + 1:-1]
+        elif item.type == ITEM_TYPE_PAGE:  # 树第二层,page下的子节点
+            pageId = item.id
             self.showXulDebugData(XulDebugServerHelper.HOST + 'get-layout/' + pageId)
-        elif parentText == ROOT_ITEM_USER_OBJECT:  # userobject下的子节点
-            objectId = itemText[itemText.find('(') + 1:-1]
+        elif item.type == ITEM_TYPE_USER_OBJECT:  # 树第二层,userObject下的子节点
+            objectId = item.id
             self.showXulDebugData(XulDebugServerHelper.HOST + 'get-user-object/' + objectId)
+        elif item.type == ITEM_TYPE_PROVIDER:  # 树第三层,userObject下的DataService下的子节点
+            pass
+        self.fillPropertyEditor(item.data)
 
     def buildPageItem(self):
         self.pageItem.removeRows(0, self.pageItem.rowCount())
@@ -235,14 +241,20 @@ class MainWindow(BaseWindow):
             if isinstance(pagesNodes['page'], list):
                 for i, page in enumerate(pagesNodes['page']):
                     # 把page解析了以后放page节点下
-                    row = QStandardItem('%s(%s)' % (page['@pageId'], page['@id']))
+                    row = QStandardItem(page['@pageId'])
+                    row.id = page['@id']
                     row.data = page
+                    row.type = ITEM_TYPE_PAGE
                     self.pageItem.appendRow(row)
             else:
                 page = pagesNodes['page']
-                row = QStandardItem('%s(%s)' % (page['@pageId'], page['@id']))
+                row = QStandardItem(page['@pageId'])
+                row.id = page['@id']
                 row.data = page
+                row.type = ITEM_TYPE_PAGE
                 self.pageItem.appendRow(row)
+            if self.pageItem.rowCount() > 0:
+                self.pageItem.setText('%s(%s)' % (ROOT_ITEM_PAGE, self.pageItem.rowCount()))
 
     def buildUserObjectItem(self):
         self.userobjectItem.removeRows(0, self.userobjectItem.rowCount())
@@ -253,8 +265,10 @@ class MainWindow(BaseWindow):
             if isinstance(userObjectNodes['object'], list):
                 for i, o in enumerate(userObjectNodes['object']):
                     # 把userObject加到User-Object节点下
-                    row = QStandardItem('%s(%s)' % (o['@name'], o['@id']))
+                    row = QStandardItem(o['@name'])
+                    row.id = o['@id']
                     row.data = o
+                    row.type = ITEM_TYPE_USER_OBJECT
                     self.userobjectItem.appendRow(row)
                     # 如果是DataServcie, 填充所有的Provider到该节点下
                     if o['@name'] == CHILD_ITEM_DATA_SERVICE:
@@ -263,15 +277,43 @@ class MainWindow(BaseWindow):
                             dataServiceNodes = Utils.xml2json(r.data, 'object')
                             for j, provider in enumerate(dataServiceNodes['object']['provider']):
                                 dsRow = QStandardItem(provider['ds']['@providerClass'])
+                                dsRow.id = provider['@name']
+                                dsRow.data = provider
+                                dsRow.type = ITEM_TYPE_PROVIDER
                                 row.appendRow(dsRow)
                             # 对Provider按升序排序
                             row.sortChildren(0)
+                    if row.rowCount() > 0:
+                        row.setText('%s(%s)' % (row.text(), row.rowCount()))
             else:
-                o = userObjectNodes['object']
-                row = QStandardItem('%s(%s)' % (o['@name'], o['@id']))
-                row.data = o
-                self.userobjectItem.appendRow(row)
+                # 没有只有一个userObject的情况, 暂不处理
+                pass
+        if self.userobjectItem.rowCount() > 0:
+            self.userobjectItem.setText('%s(%s)' % (ROOT_ITEM_USER_OBJECT, self.userobjectItem.rowCount()))
 
     def showXulDebugData(self, url):
         self.browser.load(QUrl(url))
         self.statusBar().showMessage(url)
+
+    def fillPropertyEditor(self, data):
+        self.propertyEditor.clearProperty()
+        self.qObject = QObject()
+        if isinstance(data, dict):
+            for k, v in data.items():
+                self.convertProperty(k, v)
+        self.propertyEditor.addProperty(self.qObject)
+
+    def convertProperty(self, k, v):
+        """递归的将多层属性字典转成单层的."""
+        if isinstance(v, dict):
+            for subk, subv in v.items():
+                self.convertProperty(subk, subv)
+        else:
+            setattr(self.qObject, k, v)
+
+    def showQueryDialog(self, param):
+        print('show query dialog: ', param)
+        self.dialog = BaseDialog()
+        self.dialog.initWindow()
+        self.dialog.setWindowModality(Qt.ApplicationModal)
+        self.dialog.show()
