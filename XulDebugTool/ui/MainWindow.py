@@ -165,14 +165,30 @@ class MainWindow(BaseWindow):
 
         middleContainer.stackedWidget = QStackedWidget()
         self.browser = QWebEngineView()
-        channel = QWebChannel()
-        webObject = WebShareObject()
-        channel.registerObject('bridge', webObject)
-        self.browser.page().setWebChannel(channel)
-        Utils.scriptCreator(os.path.join('..', 'resources', 'js', 'qwebchannel.js'), 'qwebchannel',
-                            self.browser.page())
-        Utils.scriptCreator(os.path.join('..', 'resources', 'js', 'event.js'), 'click',
-                            self.browser.page())
+        self.channel = QWebChannel()
+        self.webObject = WebShareObject()
+        self.channel.registerObject('bridge', self.webObject)
+        self.browser.page().setWebChannel(self.channel)
+
+        qwebchannel_js = QFile(':/qtwebchannel/qwebchannel.js')
+        if not qwebchannel_js.open(QIODevice.ReadOnly):
+            raise SystemExit(
+                'Failed to load qwebchannel.js with error: %s' %
+                qwebchannel_js.errorString())
+        qwebchannel_js = bytes(qwebchannel_js.readAll()).decode('utf-8')
+
+        script = QWebEngineScript()
+        script.setSourceCode(qwebchannel_js + '''new QWebChannel( qt.webChannelTransport, function(channel) {
+	            window.bridge = channel.objects.bridge
+	        });''')
+        script.setInjectionPoint(QWebEngineScript.DocumentCreation)
+        script.setName('qtwebchannel.js')
+        script.setWorldId(QWebEngineScript.MainWorld)
+        script.setRunsOnSubFrames(True)
+        self.browser.page().scripts().insert(script)
+
+        Utils.scriptCreator(os.path.join('..', 'resources', 'js', 'event.js'),'event.js',self.browser.page())
+        self.browser.page().setWebChannel(self.channel)
         self.showXulDebugData(XulDebugServerHelper.HOST + 'list-pages')
         middleContainer.stackedWidget.addWidget(self.browser)
         middleContainer.stackedWidget.addWidget(QLabel('tab2 content'))

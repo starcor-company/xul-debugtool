@@ -6,6 +6,7 @@ import json
 import xmltodict
 from PyQt5.QtWebEngineWidgets import QWebEngineScript
 
+
 class Utils(object):
     @staticmethod
     def xml2json(xml, tag):
@@ -18,7 +19,7 @@ class Utils(object):
             return ''
 
     @staticmethod
-    def scriptCreator(path,name,page):
+    def scriptCreator(path, name, page):
         script = QWebEngineScript()
         f = open(path, 'r')
         script.setSourceCode(f.read())
