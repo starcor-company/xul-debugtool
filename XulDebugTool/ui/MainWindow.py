@@ -17,6 +17,7 @@ from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import *
 
 from XulDebugTool.ui.BaseWindow import BaseWindow
+from XulDebugTool.ui.SettingWindow import SettingWindow
 from XulDebugTool.ui.widget.BaseDialog import BaseDialog
 from XulDebugTool.ui.widget.ConsoleView import ConsoleWindow
 from XulDebugTool.ui.widget.PropertyEditor import PropertyEditor
@@ -78,6 +79,8 @@ class MainWindow(BaseWindow):
         fileMenu.addAction(settingAction)
         fileMenu.addAction(showLogAction)
 
+        settingAction.triggered.connect(self.openSettingWindow)
+
         editMenu = menuBar.addMenu('Edit')
         findAction = QAction(IconTool.buildQIcon('find.png'), 'Find', self)
         findAction.setShortcut('Ctrl+F')
@@ -86,6 +89,10 @@ class MainWindow(BaseWindow):
         helpMenu = menuBar.addMenu('Help')
         aboutAction = QAction(IconTool.buildQIcon('about.png'), 'About', self)
         helpMenu.addAction(aboutAction)
+
+    def openSettingWindow(self):
+        self.tableInfoModel = SettingWindow()
+        self.tableInfoModel.show()
 
     def restart_program(self):
         from XulDebugTool.ui.ConnectWindow import ConnectWindow
