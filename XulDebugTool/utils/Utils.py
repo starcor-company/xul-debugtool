@@ -17,7 +17,6 @@ class Utils(object):
             return json.loads(str)
         else:
             return ''
-
     @staticmethod
     def scriptCreator(path, name, page):
         script = QWebEngineScript()
