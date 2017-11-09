@@ -9,6 +9,8 @@ XulDebugTool
 author: Kenshin
 last edited: 2017.10.23
 """
+import os
+from PyQt5.QtWebChannel import QWebChannel
 
 import pyperclip
 from PyQt5.QtCore import *
@@ -16,6 +18,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import *
 
+from XulDebugTool.model.WebShareObject import WebShareObject
 from XulDebugTool.ui.BaseWindow import BaseWindow
 from XulDebugTool.ui.SettingWindow import SettingWindow
 from XulDebugTool.ui.widget.BaseDialog import BaseDialog
@@ -170,6 +173,32 @@ class MainWindow(BaseWindow):
 
         self.tabContentWidget = QWidget()
         self.browser = QWebEngineView()
+        self.channel = QWebChannel()
+        self.webObject = WebShareObject()
+        self.channel.registerObject('bridge', self.webObject)
+        self.browser.page().setWebChannel(self.channel)
+
+        qwebchannel_js = QFile(':/qtwebchannel/qwebchannel.js')
+        if not qwebchannel_js.open(QIODevice.ReadOnly):
+            raise SystemExit(
+                'Failed to load qwebchannel.js with error: %s' %
+                qwebchannel_js.errorString())
+        qwebchannel_js = bytes(qwebchannel_js.readAll()).decode('utf-8')
+
+        script = QWebEngineScript()
+        script.setSourceCode(qwebchannel_js + '''new QWebChannel( qt.webChannelTransport, function(channel) {
+	            window.bridge = channel.objects.bridge
+	        });''')
+        script.setInjectionPoint(QWebEngineScript.DocumentCreation)
+        script.setName('qtwebchannel.js')
+        script.setWorldId(QWebEngineScript.MainWorld)
+        script.setRunsOnSubFrames(True)
+        self.browser.page().scripts().insert(script)
+
+        Utils.scriptCreator(os.path.join('..', 'resources', 'js', 'event.js'),'event.js',self.browser.page())
+        self.browser.page().setWebChannel(self.channel)
+        self.showXulDebugData(XulDebugServerHelper.HOST + 'list-pages')
+        middleContainer.stackedWidget.addWidget(self.browser)
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.initQCheckBoxUI())
@@ -222,7 +251,6 @@ class MainWindow(BaseWindow):
 
         self.mainSplitter = QSplitter(Qt.Vertical)
         self.mainSplitter.setHandleWidth(0)
-
         self.mainSplitter.addWidget(self.contentSplitter)
         self.mainSplitter.addWidget(self.consoleView)
         self.mainSplitter.setStretchFactor(1, 0)
