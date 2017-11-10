@@ -9,22 +9,26 @@ XulDebugTool
 author: Kenshin
 last edited: 2017.10.23
 """
+import os
 
 import pyperclip
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
-from PyQt5.QtWebEngineWidgets import QWebEngineView
+from PyQt5.QtWebChannel import QWebChannel
+from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineScript
 from PyQt5.QtWidgets import *
 
 from XulDebugTool.ui.BaseWindow import BaseWindow
 from XulDebugTool.ui.SettingWindow import SettingWindow
 from XulDebugTool.ui.widget.BaseDialog import BaseDialog
 from XulDebugTool.ui.widget.ConsoleView import ConsoleWindow
+from XulDebugTool.ui.widget.DataQueryDialog import DataQueryDialog
 from XulDebugTool.ui.widget.PropertyEditor import PropertyEditor
 from XulDebugTool.ui.widget.SearchBarQLineEdit import SearchBarQLineEdit
 from XulDebugTool.utils.IconTool import IconTool
 from XulDebugTool.utils.Utils import Utils
 from XulDebugTool.utils.XulDebugServerHelper import XulDebugServerHelper
+from XulDebugTool.webprocess.WebShareObject import WebShareObject
 
 ROOT_ITEM_PAGE = 'Page'
 ROOT_ITEM_USER_OBJECT = 'User-Object'
@@ -177,6 +181,33 @@ class MainWindow(BaseWindow):
 
         self.tabContentWidget = QWidget()
         self.browser = QWebEngineView()
+
+        self.channel = QWebChannel()
+        self.webObject = WebShareObject()
+        self.channel.registerObject('bridge', self.webObject)
+        self.browser.page().setWebChannel(self.channel)
+
+        qwebchannel_js = QFile(':/qtwebchannel/qwebchannel.js')
+        if not qwebchannel_js.open(QIODevice.ReadOnly):
+            raise SystemExit(
+                'Failed to load qwebchannel.js with error: %s' %
+                qwebchannel_js.errorString())
+        qwebchannel_js = bytes(qwebchannel_js.readAll()).decode('utf-8')
+
+        script = QWebEngineScript()
+        script.setSourceCode(qwebchannel_js)
+        script.setInjectionPoint(QWebEngineScript.DocumentCreation)
+        script.setName('qtwebchannel.js')
+        script.setWorldId(QWebEngineScript.MainWorld)
+        script.setRunsOnSubFrames(True)
+        self.browser.page().scripts().insert(script)
+
+        Utils.scriptCreator(os.path.join('..', 'resources', 'js', 'event.js'),'event.js',self.browser.page())
+        self.browser.page().setWebChannel(self.channel)
+
+
+
+
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.initQCheckBoxUI())
@@ -202,7 +233,6 @@ class MainWindow(BaseWindow):
         # ----------------------------right layout---------------------------- #
 
         self.propertyEditor = PropertyEditor(['Key', 'Value'])
-
         rightContainer = QWidget()
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -446,9 +476,8 @@ class MainWindow(BaseWindow):
         else:
             setattr(self.qObject, k, v)
 
-    def showQueryDialog(self, param):
-        print('show query dialog: ', param)
-        self.dialog = BaseDialog()
-        self.dialog.initWindow()
-        self.dialog.setWindowModality(Qt.ApplicationModal)
+    def showQueryDialog(self, data):
+        print('show query dialog: ', data)
+        self.dialog = DataQueryDialog()
+        self.dialog.setData(data)
         self.dialog.show()
