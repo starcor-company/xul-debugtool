@@ -9,19 +9,26 @@ XulDebugTool
 author: Kenshin
 last edited: 2017.10.23
 """
+import os
+
+import pyperclip
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWebChannel import QWebChannel
+from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineScript
+from PyQt5.QtWidgets import *
 
 from XulDebugTool.ui.BaseWindow import BaseWindow
+from XulDebugTool.ui.SettingWindow import SettingWindow
+from XulDebugTool.ui.widget.BaseDialog import BaseDialog
+from XulDebugTool.ui.widget.ConsoleView import ConsoleWindow
+from XulDebugTool.ui.widget.DataQueryDialog import DataQueryDialog
 from XulDebugTool.ui.widget.PropertyEditor import PropertyEditor
 from XulDebugTool.ui.widget.SearchBarQLineEdit import SearchBarQLineEdit
 from XulDebugTool.utils.IconTool import IconTool
 from XulDebugTool.utils.Utils import Utils
 from XulDebugTool.utils.XulDebugServerHelper import XulDebugServerHelper
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWebEngineWidgets import QWebEngineView
-
-import pyperclip
+from XulDebugTool.webprocess.WebShareObject import WebShareObject
 
 ROOT_ITEM_PAGE = 'Page'
 ROOT_ITEM_USER_OBJECT = 'User-Object'
@@ -40,13 +47,22 @@ ITEM_TYPE_USER_OBJECT = 'userObject'
 # Model树第二层的节点类型
 ITEM_TYPE_PROVIDER = 'provider'
 
+#获取元素详情的4个参数
+SKIP_PROP = 'skip-prop'
+WITH_CHILDREN = 'with-children'
+WITH_BINDING_DATA = 'with-binding-data'
+WITH_POSITION = 'with-position'
 
 class MainWindow(BaseWindow):
     def __init__(self):
         super().__init__()
         self.qObject = QObject()
+        self.initConsole()
         self.initUI()
         self.show()
+
+    def initConsole(self):
+        self.consoleView = ConsoleWindow()
 
     def initUI(self):
         self.resize(1400, 800)
@@ -67,6 +83,8 @@ class MainWindow(BaseWindow):
         fileMenu.addAction(settingAction)
         fileMenu.addAction(showLogAction)
 
+        settingAction.triggered.connect(self.openSettingWindow)
+
         editMenu = menuBar.addMenu('Edit')
         findAction = QAction(IconTool.buildQIcon('find.png'), 'Find', self)
         findAction.setShortcut('Ctrl+F')
@@ -75,6 +93,10 @@ class MainWindow(BaseWindow):
         helpMenu = menuBar.addMenu('Help')
         aboutAction = QAction(IconTool.buildQIcon('about.png'), 'About', self)
         helpMenu.addAction(aboutAction)
+
+    def openSettingWindow(self):
+        self.tableInfoModel = SettingWindow()
+        self.tableInfoModel.show()
 
     def restart_program(self):
         from XulDebugTool.ui.ConnectWindow import ConnectWindow
