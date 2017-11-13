@@ -151,15 +151,34 @@ class ConnectWindow(BaseWindow):
         XulDebugServerHelper.HOST = 'http://' + self.ip + ':' + self.xulPort + '/api/'
         self.timer.start(500)
         self.currentCmd = 'adb connect ' + self.ip + ':' + self.adbPort
+        if self.adbPort == '':
+            self.currentCmd = 'adb connect ' + self.ip
         self.detailEdit.append('# ' + self.currentCmd)
         self.connectButton.setEnabled(False)
         self.detailEdit.append('connecting...')
         self.cmdExecutor.exec(self.currentCmd)
+        self.connectTime = QTimer()
+        self.connectTime.timeout.connect(self.onCmdExectuedtimeOut)
+        self.connectTime.start(1000)
+
+    intConnectTime = 0
+
+    def onCmdExectuedtimeOut(self):
+        if self.intConnectTime >= 120:
+            print('onCmdExectuedtimeOut')
+            self.detailEdit.append('# ' + 'connect timeout')
+            print('checkDeviceStatus  self.cmdExecutor.isFinished() :%s' % self.cmdExecutor.isFinished())
+            self.onCmdExectued(['connect timeout'])
+            self.connectTime.stop()
+        else:
+            self.intConnectTime = self.intConnectTime + 1
+
 
     def onCmdExectued(self, result):
+        from datetime import datetime
         for r in result:
-            self.detailEdit.append(r)
-            print(r)
+            self.detailEdit.append('%s onCmdExectued result： %s' % (datetime.now(),  r))
+            print('%s onCmdExectued result： %s' % (datetime.now(),  r))
         if self.currentCmd.startswith('adb connect'):
             self.checkDeviceStatus()
         elif self.currentCmd == 'adb devices':
@@ -175,6 +194,7 @@ class ConnectWindow(BaseWindow):
             self.connectButton.setEnabled(True)
             self.connectButton.setText('connect')
             self.connectButton.setStyleSheet("QPushButton{text-align : middle;}")
+            self.connectTime.stop()
 
     def checkDeviceStatus(self):
         self.currentCmd = 'adb devices'
