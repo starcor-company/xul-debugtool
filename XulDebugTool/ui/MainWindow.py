@@ -75,6 +75,7 @@ class MainWindow(BaseWindow):
         fileMenu = menuBar.addMenu('File')
         disConnectAction = QAction(IconTool.buildQIcon('disconnect.png'), 'Disconnect', self)
         disConnectAction.setShortcut('Ctrl+D')
+        disConnectAction.triggered.connect(self.restart_program)
         settingAction = QAction(IconTool.buildQIcon('setting.png'), 'Setting...', self)
         settingAction.setShortcut('Ctrl+Shift+S')
         showLogAction = QAction('Show Log', self)
@@ -96,6 +97,12 @@ class MainWindow(BaseWindow):
     def openSettingWindow(self):
         self.tableInfoModel = SettingWindow()
         self.tableInfoModel.show()
+
+    def restart_program(self):
+        from XulDebugTool.ui.ConnectWindow import ConnectWindow
+        print("新建连接页面")
+        ConnectWindow()
+        self.close()
 
     def initLayout(self):
         # ----------------------------left layout---------------------------- #
