@@ -230,24 +230,7 @@ class MainWindow(BaseWindow):
         middleContainer.setLayout(layout)
 
         # ----------------------------right layout---------------------------- #
-        self.rightSiderClickInfo = 'Property'
-
-        self.rightSiderTabWidget = QTabWidget()
-        self.rightSiderTabBar = QTabBar()
-        self.rightSiderTabWidget.setTabBar(self.rightSiderTabBar)
-        self.rightSiderTabWidget.setTabPosition(QTabWidget.East)
-        self.favoriteTreeView = FavoriteTreeView(self)
-
-        # self.propertyEditor = PropertyEditor(['Key', 'Value'])
-        self.inputWidget = UpdateProperty()
-        self.rightSiderTabWidget.addTab(self.inputWidget, IconTool.buildQIcon('property.png'), 'Property')
-
-        self.rightSiderTabWidget.setStyleSheet(('QTab::tab{height:60px;width:32px;color:black;padding:0px}'
-                                                'QTabBar::tab:selected{background:lightgray}'))
-
-        # self.rightSiderTabWidget.addTab(self.propertyEditor,IconTool.buildQIcon('property.png'),'property')
-        self.rightSiderTabWidget.addTab(self.favoriteTreeView, IconTool.buildQIcon('favorites.png'), 'Favorites')
-        self.rightSiderTabBar.tabBarClicked.connect(self.rightSiderClick)
+        self.__initRightArea()
 
         # ----------------------------entire layout---------------------------- #
 
@@ -256,7 +239,7 @@ class MainWindow(BaseWindow):
 
         self.contentSplitter.addWidget(leftContainer)
         self.contentSplitter.addWidget(middleContainer)
-        self.contentSplitter.addWidget(self.rightSiderTabWidget)
+        self.contentSplitter.addWidget(self.rightSideTabWidget)
         self.contentSplitter.setStretchFactor(0, 0)
         self.contentSplitter.setStretchFactor(1, 6)
         self.contentSplitter.setStretchFactor(2, 6)
@@ -272,10 +255,30 @@ class MainWindow(BaseWindow):
         # 默认隐藏掉复选框
         self.groupBox.setHidden(True)
 
+    def __initRightArea(self):
+        self.rightSideClickInfo = 'Property'
+
+        self.rightSideTabWidget = QTabWidget()
+        self.rightSideTabBar = QTabBar()
+        self.rightSideTabWidget.setTabBar(self.rightSideTabBar)
+        self.rightSideTabWidget.setTabPosition(QTabWidget.East)
+        self.favoriteTreeView = FavoriteTreeView(self)
+
+        # self.propertyEditor = PropertyEditor(['Key', 'Value'])
+        self.propertyListView = UpdateProperty()
+        self.rightSideTabWidget.addTab(self.propertyListView, IconTool.buildQIcon('property.png'), 'Property')
+
+        self.rightSideTabWidget.setStyleSheet(('QTab::tab{height:60px;width:32px;color:black;padding:0px}'
+                                                'QTabBar::tab:selected{background:lightgray}'))
+
+        # self.rightSiderTabWidget.addTab(self.propertyEditor,IconTool.buildQIcon('property.png'),'property')
+        self.rightSideTabWidget.addTab(self.favoriteTreeView, IconTool.buildQIcon('favorites.png'), 'Favorites')
+        self.rightSideTabBar.tabBarClicked.connect(self.rightSiderClick)
+
     def addUpdate(self, value=None):
-        self.inputWidget.initData(value)
-        self.inputWidget.updateAttrUI()
-        self.inputWidget.updateStyleUI()
+        self.propertyListView.initData(value)
+        self.propertyListView.updateAttrUI()
+        self.propertyListView.updateStyleUI()
 
     def initQCheckBoxUI(self):
         self.groupBox = QGroupBox()
@@ -414,17 +417,17 @@ class MainWindow(BaseWindow):
 
     def rightSiderClick(self, index):
         # 两次单击同一个tabBar时显示隐藏内容区域
-        if self.rightSiderTabBar.tabText(index) == self.rightSiderClickInfo:
-            if self.rightSiderTabWidget.width() == 32:
-                self.rightSiderTabWidget.setMaximumWidth(1800)
-                self.rightSiderTabWidget.setMinimumWidth(32)
+        if self.rightSideTabBar.tabText(index) == self.rightSideClickInfo:
+            if self.rightSideTabWidget.width() == 32:
+                self.rightSideTabWidget.setMaximumWidth(1800)
+                self.rightSideTabWidget.setMinimumWidth(32)
             else:
-                self.rightSiderTabWidget.setFixedWidth(32)
+                self.rightSideTabWidget.setFixedWidth(32)
         else:
-            if self.rightSiderTabWidget.width() == 32:
-                self.rightSiderTabWidget.setMaximumWidth(1800)
-                self.rightSiderTabWidget.setMinimumWidth(32)
-        self.rightSiderClickInfo = self.rightSiderTabBar.tabText(index)
+            if self.rightSideTabWidget.width() == 32:
+                self.rightSideTabWidget.setMaximumWidth(1800)
+                self.rightSideTabWidget.setMinimumWidth(32)
+        self.rightSideClickInfo = self.rightSideTabBar.tabText(index)
 
     @pyqtSlot(QPoint)
     def openContextMenu(self, point):

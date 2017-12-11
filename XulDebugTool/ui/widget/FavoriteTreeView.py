@@ -17,18 +17,19 @@ ITEM_TYPE_FAVORITES = 'favorites_type'
 ITEM_TYPE_HISTORY = 'history_type'
 ITEM_TYPE_URL = 'url_type'
 
+
 class FavoriteTreeView(QTreeView):
     def __init__(self,window, parent=None):
         self.mainWindow = window
         try:
-            super(FavoriteTreeView,self).__init__(parent)
+            super(FavoriteTreeView, self).__init__(parent)
             self.favoriteDB = FavoriteDB()
             self.treeModel = QStandardItemModel()
             self.favorites = QStandardItem(ROOT_FAVORITES)
             self.buildFavoritesTree()
             self.providerQueryHistory = QStandardItem(ROOT_PROVIDERQUERYHISTORY)
             self.buildQueryHistory()
-            self.treeModel.appendColumn([self.favorites,self.providerQueryHistory])
+            self.treeModel.appendColumn([self.favorites, self.providerQueryHistory])
             self.treeModel.setHeaderData(0, Qt.Horizontal, 'Record')
 
             self.setModel(self.treeModel)
