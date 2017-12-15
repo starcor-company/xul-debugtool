@@ -99,8 +99,13 @@ class ConsoleWindow(QMainWindow):
         self.setCentralWidget(self.mainSplitter)
 
         # 重定向输出
+        stdout = sys.stdout
         sys.stdout = ConsoleEmittor(textWritten=self.normalOutputWritten)
+        sys.stdout.setSTD(stdout)
+
+        stderr = sys.stderr
         sys.stderr = ConsoleEmittor(textWritten=self.normalOutputWritten)
+        sys.stderr.setSTD(stderr)
 
 
 
