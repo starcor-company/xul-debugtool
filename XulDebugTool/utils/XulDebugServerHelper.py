@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import string
 from urllib.parse import quote
+from urllib.request import urlopen as get
 
 import urllib3
 
@@ -18,6 +19,7 @@ class XulDebugServerHelper(object):
     __SET_STYLE = 'set-style'
     __ADD_CLASS = 'add-class'
     __REMOVE_CLASS = 'remove-class'
+    __GET_ASSETS = 'get-assets'
 
     @staticmethod
     def listPages():
@@ -89,6 +91,13 @@ class XulDebugServerHelper(object):
                 STCLogger().e(e)
                 return
             return r
+
+    @staticmethod
+    def getAssets(path):
+        url = "{}{}/{}".format(XulDebugServerHelper.HOST, XulDebugServerHelper.__GET_ASSETS, path)
+        with get(url) as response:
+            d = response.read()
+        return d
 
     @staticmethod
     def updateUrl(type, id, key, value):

@@ -24,7 +24,7 @@ class Utils(object):
     @staticmethod
     def scriptCreator(path, name, page):
         script = QWebEngineScript()
-        f = open(path, 'r')
+        f = open(path, 'r', encoding='utf-8')
         script.setSourceCode(f.read())
         script.setInjectionPoint(QWebEngineScript.DocumentReady)
         script.setName(name)

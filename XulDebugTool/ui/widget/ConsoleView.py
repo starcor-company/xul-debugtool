@@ -116,7 +116,6 @@ class ConsoleWindow(QMainWindow):
         self.textEdit.setTextCursor(cursor)
         self.textEdit.ensureCursorVisible()
 
-
     def initMenuBar(self):
         menuBar = self.menuBar()
         fileMenu = menuBar.addMenu('Logcat')
@@ -136,7 +135,3 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     mainWin = ConsoleWindow()
     sys.exit(app.exec_())
-
-
-
-

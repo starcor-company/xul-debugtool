@@ -169,7 +169,7 @@ class UpdateProperty(QTreeWidget):
     def initData(self, data):
         dict = json.loads(data)
         action = dict['action']
-        if action == "click":
+        if action == "updateProp":
             id = dict['Id']
             xml = dict['xml']
             if id == self.viewId:
