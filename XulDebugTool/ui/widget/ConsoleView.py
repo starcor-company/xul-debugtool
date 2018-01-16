@@ -99,8 +99,13 @@ class ConsoleWindow(QMainWindow):
         self.setCentralWidget(self.mainSplitter)
 
         # 重定向输出
+        stdout = sys.stdout
         sys.stdout = ConsoleEmittor(textWritten=self.normalOutputWritten)
+        sys.stdout.setSTD(stdout)
+
+        stderr = sys.stderr
         sys.stderr = ConsoleEmittor(textWritten=self.normalOutputWritten)
+        sys.stderr.setSTD(stderr)
 
 
 
@@ -110,7 +115,6 @@ class ConsoleWindow(QMainWindow):
         cursor.insertHtml(text)
         self.textEdit.setTextCursor(cursor)
         self.textEdit.ensureCursorVisible()
-
 
     def initMenuBar(self):
         menuBar = self.menuBar()
@@ -131,7 +135,3 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     mainWin = ConsoleWindow()
     sys.exit(app.exec_())
-
-
-
-

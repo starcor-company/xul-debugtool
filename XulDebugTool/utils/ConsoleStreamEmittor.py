@@ -8,3 +8,7 @@ class ConsoleEmittor(QObject):
 
     def write(self, text):
         self.textWritten.emit(str(text))
+        self.std.write(text)
+
+    def setSTD(self, std):
+        self.std = std

@@ -17,18 +17,19 @@ ITEM_TYPE_FAVORITES = 'favorites_type'
 ITEM_TYPE_HISTORY = 'history_type'
 ITEM_TYPE_URL = 'url_type'
 
+
 class FavoriteTreeView(QTreeView):
     def __init__(self,window, parent=None):
         self.mainWindow = window
         try:
-            super(FavoriteTreeView,self).__init__(parent)
+            super(FavoriteTreeView, self).__init__(parent)
             self.favoriteDB = FavoriteDB()
             self.treeModel = QStandardItemModel()
             self.favorites = QStandardItem(ROOT_FAVORITES)
             self.buildFavoritesTree()
             self.providerQueryHistory = QStandardItem(ROOT_PROVIDERQUERYHISTORY)
             self.buildQueryHistory()
-            self.treeModel.appendColumn([self.favorites,self.providerQueryHistory])
+            self.treeModel.appendColumn([self.favorites, self.providerQueryHistory])
             self.treeModel.setHeaderData(0, Qt.Horizontal, 'Record')
 
             self.setModel(self.treeModel)
@@ -88,10 +89,10 @@ class FavoriteTreeView(QTreeView):
 
             self.favoriteDB.updateFavorites('and id = '+ str(item.id), name = item.name,url = item.url,date = dateTime, history_id=historyMaxId)
             self.favoriteDB.updateHistory('and id = ' + str(item.historyId), favorite=1)
-            self.mainWindow.onGetQueryUrl(item.url)
+            self.mainWindow.rightArea.onGetQueryUrl(item.url)
         elif item.type == ITEM_TYPE_HISTORY:
             self.favoriteDB.insertHistory(item.name, item.url, dateTime, 0)
-            self.mainWindow.onGetQueryUrl(item.url)
+            self.mainWindow.rightArea.onGetQueryUrl(item.url)
 
     @pyqtSlot(QPoint)
     def openContextMenu(self,point):
@@ -168,7 +169,7 @@ class FavoriteTreeView(QTreeView):
 
     def showQueryDialog(self,item):
         self.dialog = DataQueryDialog(item)
-        self.dialog.finishSignal.connect(self.mainWindow.onGetQueryUrl)
+        self.dialog.finishSignal.connect(self.mainWindow.rightArea.onGetQueryUrl)
         self.dialog.show()
         STCLogger().i('show queryDataDialog' )
 

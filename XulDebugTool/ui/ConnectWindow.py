@@ -297,15 +297,23 @@ class ConnectWindow(BaseWindow):
         try:
             conn = sqlite3.connect('XulDebugTool.db')
             cursor = conn.cursor()
-            cursor.execute('create table if not exists device (name varchar(50) primary key)')
+
+            CREATE_TABLE = """
+            CREATE TABLE IF NOT EXISTS device (
+                name VARCHAR(50) PRIMARY KEY
+            )
+            """
+            INSERT_DEVICE = "REPLACE INTO device (name) values (\'{}\')"
+            cursor.execute(CREATE_TABLE)
             if self.ip != '':
-                cursor.execute('insert into device (name) values (\'' + device + '\')')
+                cursor.execute(INSERT_DEVICE.format(device))
             conn.commit()
         except Exception as e:
-            print(e)
+            print("addDeviceToDB err, msg : {}".format(e))
         finally:
             cursor.close()
             conn.close()
+
 
     def startMainWindow(self):
         print('Start main window.')

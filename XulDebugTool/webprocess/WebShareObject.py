@@ -27,3 +27,8 @@ class WebShareObject(QWidget):
         WebDataHandler().readData(value)
 
     strValue = pyqtProperty(str, fget=_getStrValue, fset=_setStrValue)
+
+    def __jsLog(self, msg):
+        print(msg)
+
+    jsLog = pyqtProperty(str, fset=__jsLog)

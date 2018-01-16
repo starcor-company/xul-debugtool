@@ -9,6 +9,7 @@ XulDebugTool
 author: Kenshin
 last edited: 2017.10.23
 """
+import json
 import os
 
 import pyperclip
@@ -23,8 +24,10 @@ from XulDebugTool.ui.AboutWindow import AboutWindow
 from XulDebugTool.ui.BaseWindow import BaseWindow
 from XulDebugTool.ui.widget.ButtomConsoleWindow import ButtomWindow
 from XulDebugTool.ui.widget.DataQueryDialog import DataQueryDialog
+from XulDebugTool.ui.widget.RightArea import RightArea
 from XulDebugTool.ui.widget.FavoriteTreeView import FavoriteTreeView
 from XulDebugTool.ui.widget.UpdateProperty import UpdateProperty
+
 from XulDebugTool.utils.FileHelper import FileHelper
 from XulDebugTool.utils.IconTool import IconTool
 from XulDebugTool.utils.Utils import Utils
@@ -53,6 +56,7 @@ SKIP_PROP = 'skip-prop'
 WITH_CHILDREN = 'with-children'
 WITH_BINDING_DATA = 'with-binding-data'
 WITH_POSITION = 'with-position'
+
 
 class MainWindow(BaseWindow):
     def __init__(self):
@@ -192,7 +196,7 @@ class MainWindow(BaseWindow):
         self.webObject = WebShareObject()
         self.channel.registerObject('bridge', self.webObject)
         self.browser.page().setWebChannel(self.channel)
-        self.webObject.jsCallback.connect(lambda value: self.addUpdate(value))
+        self.webObject.jsCallback.connect(lambda value: self.deliverEventByAction(value))
 
         qwebchannel_js = QFile(':/qtwebchannel/qwebchannel.js')
         if not qwebchannel_js.open(QIODevice.ReadOnly):
@@ -238,24 +242,7 @@ class MainWindow(BaseWindow):
         middleContainer.setLayout(layout)
 
         # ----------------------------right layout---------------------------- #
-        self.rightSiderClickInfo = 'Property'
-
-        self.rightSiderTabWidget = QTabWidget()
-        self.rightSiderTabBar = QTabBar()
-        self.rightSiderTabWidget.setTabBar(self.rightSiderTabBar)
-        self.rightSiderTabWidget.setTabPosition(QTabWidget.East)
-        self.favoriteTreeView = FavoriteTreeView(self)
-
-        # self.propertyEditor = PropertyEditor(['Key', 'Value'])
-        self.inputWidget = UpdateProperty()
-        self.rightSiderTabWidget.addTab(self.inputWidget, IconTool.buildQIcon('property.png'), 'Property')
-
-        self.rightSiderTabWidget.setStyleSheet(('QTab::tab{height:60px;width:32px;color:black;padding:0px}'
-                                                'QTabBar::tab:selected{background:lightgray}'))
-
-        # self.rightSiderTabWidget.addTab(self.propertyEditor,IconTool.buildQIcon('property.png'),'property')
-        self.rightSiderTabWidget.addTab(self.favoriteTreeView, IconTool.buildQIcon('favorites.png'), 'Favorites')
-        self.rightSiderTabBar.tabBarClicked.connect(self.rightSiderClick)
+        self.__initRightArea()
 
         # ----------------------------entire layout---------------------------- #
 
@@ -264,7 +251,7 @@ class MainWindow(BaseWindow):
 
         self.contentSplitter.addWidget(leftContainer)
         self.contentSplitter.addWidget(middleContainer)
-        self.contentSplitter.addWidget(self.rightSiderTabWidget)
+        self.contentSplitter.addWidget(self.rightArea)
         self.contentSplitter.setStretchFactor(0, 0)
         self.contentSplitter.setStretchFactor(1, 6)
         self.contentSplitter.setStretchFactor(2, 6)
@@ -280,10 +267,19 @@ class MainWindow(BaseWindow):
         # 默认隐藏掉复选框
         self.groupBox.setHidden(True)
 
-    def addUpdate(self, value=None):
-        self.inputWidget.initData(value)
-        self.inputWidget.updateAttrUI()
-        self.inputWidget.updateStyleUI()
+    def __initRightArea(self):
+        self.rightArea = RightArea()
+
+    def deliverEventByAction(self, event):
+        e = json.loads(event)
+        action = e["action"]
+
+        if action == "showImg":
+            self.rightArea.showImage(event)
+        elif action == "updateProp":
+            self.rightArea.updateProp(event)
+        elif action == "doLog":
+            print(e['data'])
 
     def initQCheckBoxUI(self):
         self.groupBox = QGroupBox()
@@ -420,6 +416,7 @@ class MainWindow(BaseWindow):
                     self.url = self.url[:-1]
                 self.showXulDebugData(self.url)
 
+
     def rightSiderClick(self, index):
         # 两次单击同一个tabBar时显示隐藏内容区域
         if self.rightSiderTabBar.tabText(index) == self.rightSiderClickInfo:
@@ -447,7 +444,7 @@ class MainWindow(BaseWindow):
         FileHelper.writeLogSavePath(file_path)
         FileHelper.setLogPath()
 
-
+        
     @pyqtSlot(QPoint)
     def openContextMenu(self, point):
         index = self.treeView.indexAt(point)
@@ -574,7 +571,7 @@ class MainWindow(BaseWindow):
                 '%s(%s)' % (ROOT_ITEM_USER_OBJECT, self.userobjectItem.rowCount()))
 
     def showXulDebugData(self, url):
-        STCLogger().i('request url:' + url)
+        STCLogger().i('showXulDebugData url:' + url)
         self.browser.load(QUrl(url))
         self.statusBar().showMessage(url)
 
@@ -597,14 +594,8 @@ class MainWindow(BaseWindow):
     def showQueryDialog(self, data):
         STCLogger().i('show query dialog: ', data)
         self.dialog = DataQueryDialog(data)
-        self.dialog.finishSignal.connect(self.onGetQueryUrl)
+        self.dialog.finishSignal.connect(self.rightArea.onGetQueryUrl)
         self.dialog.show()
-
-    def onGetQueryUrl(self, url):
-        STCLogger().i('request url:' + url)
-        self.favoriteTreeView.updateTree()
-        self.browser.load(QUrl(url))
-        self.statusBar().showMessage(url)
 
     def findActionClick(self):
         self.searchWidget.show()
