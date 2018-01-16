@@ -20,6 +20,8 @@ class XulDebugServerHelper(object):
     __ADD_CLASS = 'add-class'
     __REMOVE_CLASS = 'remove-class'
     __GET_ASSETS = 'get-assets'
+    __CLEAR_ALL_CACHES = 'clear-all-caches'
+
 
     @staticmethod
     def listPages():
@@ -108,8 +110,24 @@ class XulDebugServerHelper(object):
                 url = XulDebugServerHelper.HOST + type + '/' + id + '/' + key + '/' + value
                 http = urllib3.PoolManager()
                 newUrl = quote(url, safe=string.printable)
+                STCLogger().i("updateUrl = " + url)
                 r = http.request('GET', newUrl)
             except Exception as e:
                 STCLogger().e(e)
                 return
             return r
+
+    @staticmethod
+    def clearAllCaches():
+        if XulDebugServerHelper.HOST == '':
+            raise ValueError('Host is empty!')
+        else:
+            try:
+                url = XulDebugServerHelper.HOST + XulDebugServerHelper.__CLEAR_ALL_CACHES
+                http = urllib3.PoolManager()
+                newUrl = quote(url,safe=string.printable)
+                r = http.request('GET',newUrl)
+            except Exception as e:
+                STCLogger().e(e)
+                return
+            return  r

@@ -25,6 +25,10 @@ from XulDebugTool.ui.BaseWindow import BaseWindow
 from XulDebugTool.ui.widget.ButtomConsoleWindow import ButtomWindow
 from XulDebugTool.ui.widget.DataQueryDialog import DataQueryDialog
 from XulDebugTool.ui.widget.RightArea import RightArea
+from XulDebugTool.ui.widget.FavoriteTreeView import FavoriteTreeView
+from XulDebugTool.ui.widget.UpdateProperty import UpdateProperty
+
+from XulDebugTool.utils.FileHelper import FileHelper
 from XulDebugTool.utils.IconTool import IconTool
 from XulDebugTool.utils.Utils import Utils
 from XulDebugTool.utils.XulDebugServerHelper import XulDebugServerHelper
@@ -82,8 +86,15 @@ class MainWindow(BaseWindow):
         settingAction.setShortcut('Ctrl+Shift+S')
         settingAction.setShortcutContext(Qt.ApplicationShortcut)
         settingAction.triggered.connect(lambda: STCLogger().d('setting'))
-        showLogAction = QAction('Show Log', self)
+        clearCacheAction = QAction(IconTool.buildQIcon('clearCache.png'),'&ClearCache',self);
+        clearCacheAction.setShortcut('Ctrl+Alt+C');
+        clearCacheAction.setShortcutContext(Qt.ApplicationShortcut)
+        clearCacheAction.triggered.connect(self.clearCache)
+        settingLogPathAction = QAction(IconTool.buildQIcon('path.png'),'&LogPath',self);
+        settingLogPathAction.triggered.connect(self.setLogPath)
         fileMenu.addAction(disConnectAction)
+        fileMenu.addAction(clearCacheAction)
+        fileMenu.addAction(settingLogPathAction)
         # fileMenu.addAction(settingAction)
         # fileMenu.addAction(showLogAction)
 
@@ -405,6 +416,35 @@ class MainWindow(BaseWindow):
                     self.url = self.url[:-1]
                 self.showXulDebugData(self.url)
 
+
+    def rightSiderClick(self, index):
+        # 两次单击同一个tabBar时显示隐藏内容区域
+        if self.rightSiderTabBar.tabText(index) == self.rightSiderClickInfo:
+            if self.rightSiderTabWidget.width() == 32:
+                self.rightSiderTabWidget.setMaximumWidth(1800)
+                self.rightSiderTabWidget.setMinimumWidth(32)
+            else:
+                self.rightSiderTabWidget.setFixedWidth(32)
+        else:
+            if self.rightSiderTabWidget.width() == 32:
+                self.rightSiderTabWidget.setMaximumWidth(1800)
+                self.rightSiderTabWidget.setMinimumWidth(32)
+        self.rightSiderClickInfo = self.rightSiderTabBar.tabText(index)
+
+    def clearCache(self):
+        r = XulDebugServerHelper.clearAllCaches()
+        if r.status == 200 :
+            self.statusBar().showMessage('cache cleanup success')
+        else:
+            self.statusBar().showMessage('cache cleanup failed')
+
+    def setLogPath(self):
+        file_path = QFileDialog.getSaveFileName(self, 'save file', "C:\\Users\\Administrator\\logcat",
+                                                "Txt files(*.txt)")
+        FileHelper.writeLogSavePath(file_path)
+        FileHelper.setLogPath()
+
+        
     @pyqtSlot(QPoint)
     def openContextMenu(self, point):
         index = self.treeView.indexAt(point)

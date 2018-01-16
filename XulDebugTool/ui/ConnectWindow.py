@@ -16,11 +16,12 @@ import sqlite3
 
 from PyQt5.QtCore import pyqtSlot, Qt, QTimer
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QPushButton, QLabel, QTextEdit, QComboBox, QHBoxLayout, QListWidget, QWidget, QMessageBox
+from PyQt5.QtWidgets import QPushButton, QLabel, QTextEdit, QComboBox, QHBoxLayout, QListWidget, QWidget
 
 from XulDebugTool.ui.BaseWindow import BaseWindow
 from XulDebugTool.ui.MainWindow import MainWindow, QListWidgetItem
 from XulDebugTool.utils.CmdExecutor import CmdExecutor
+from XulDebugTool.utils.FileHelper import FileHelper
 from XulDebugTool.utils.IconTool import IconTool
 from XulDebugTool.utils.XulDebugServerHelper import XulDebugServerHelper
 
@@ -29,8 +30,9 @@ class ConnectWindow(BaseWindow):
     def __init__(self):
         super().__init__()
         # 命令行执行器
-        self.cmdExecutor = CmdExecutor()
-        self.cmdExecutor.setFinishCallback(self.onCmdExectued)
+        # self.cmdExecutor = CmdExecutor()
+        # self.cmdExecutor.setFinishCallback(self.onCmdExectued)
+        self.cmdExecutor = self.getCmdExecutor(self.onCmdExectued)
 
         # 连接动画需要的timer, 1秒触发一次
         self.timer = QTimer()
@@ -47,6 +49,7 @@ class ConnectWindow(BaseWindow):
 
         self.initUI()
         self.show()
+        FileHelper.initLogConfigPath()
 
     def initUI(self):
         # 只显示关闭按钮, 不显示最大化, 最小化, 并且固定窗口大小
@@ -102,6 +105,11 @@ class ConnectWindow(BaseWindow):
         self.detailEdit.move(25, 150)
         self.detailEdit.resize(420, 180)
         super().initWindow()
+
+    def getCmdExecutor(self, finishCallback):
+        executor = CmdExecutor()
+        executor.setFinishCallback(finishCallback)
+        return executor
 
     def ComboBoxItem(self, pos, ip_src):
         qWidget = QWidget()
@@ -162,6 +170,7 @@ class ConnectWindow(BaseWindow):
             return
 
         def onForwardFinished(result):
+            print("ConnectWindow onForwardFinished")
             self.ip = "localhost"
             XulDebugServerHelper.HOST = \
                 'http://' + self.ip + ':' + self.xulPort + '/api/'
@@ -179,7 +188,8 @@ class ConnectWindow(BaseWindow):
                 self.adbHost, self.xulPort, self.xulPort))
             self.detailEdit.append('# ' + self.currentCmd)
             self.detailEdit.append('create new forward port...')
-            self.cmdExecutor.setFinishCallback(onForwardFinished)
+            # self.cmdExecutor.setFinishCallback(onForwardFinished)
+            self.cmdExecutor = self.getCmdExecutor(onForwardFinished)
             self.cmdExecutor.exec(self.currentCmd)
 
         def onDeviceListed(result):
@@ -191,7 +201,8 @@ class ConnectWindow(BaseWindow):
                 self.connectButton.setEnabled(False)
                 self.detailEdit.append('# ' + self.currentCmd)
                 self.detailEdit.append('remove all forward ports...')
-                self.cmdExecutor.setFinishCallback(makeForward)
+                # self.cmdExecutor.setFinishCallback(makeForward)
+                self.cmdExecutor = self.getCmdExecutor(makeForward)
                 self.cmdExecutor.exec(self.currentCmd)
             else:
                 self.ip = self.adbHost
@@ -205,10 +216,12 @@ class ConnectWindow(BaseWindow):
                 self.connectButton.setEnabled(False)
                 self.detailEdit.append('# ' + self.currentCmd)
                 self.detailEdit.append('connecting...')
-                self.cmdExecutor.setFinishCallback(self.onCmdExectued)
+                # self.cmdExecutor.setFinishCallback(self.onCmdExectued)
+                self.cmdExecutor = self.getCmdExecutor(self.onCmdExectued)
                 self.cmdExecutor.exec(self.currentCmd)
 
-        self.cmdExecutor.setFinishCallback(onDeviceListed)
+        # self.cmdExecutor.setFinishCallback(onDeviceListed)
+        self.cmdExecutor = self.getCmdExecutor(onDeviceListed)
         self.cmdExecutor.exec("adb devices")
         self.detailEdit.append('start adb services...')
         return
@@ -243,6 +256,7 @@ class ConnectWindow(BaseWindow):
     def checkDeviceStatus(self):
         self.currentCmd = 'adb devices'
         self.detailEdit.append('# ' + self.currentCmd)
+        self.cmdExecutor = self.getCmdExecutor(self.onCmdExectued)
         self.cmdExecutor.exec(self.currentCmd)
 
     @pyqtSlot()
